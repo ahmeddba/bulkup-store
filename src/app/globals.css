@@ -1,26 +1,45 @@
+@config "../../tailwind.config.ts";
 @import "tailwindcss";
 
+@custom-variant dark (&:is(.dark *));
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --radius: 16px;
+
+  --background: 48 38% 10%;
+  --foreground: 0 0% 100%;
+
+  --card: 55 16% 10%;
+  --card-foreground: 0 0% 100%;
+
+  --popover: 55 16% 10%;
+  --popover-foreground: 0 0% 100%;
+
+  --primary: 50 93% 51%;
+  --primary-foreground: 48 38% 10%;
+
+  --muted: 52 18% 16%;
+  --muted-foreground: 45 16% 70%;
+
+  --border: 52 18% 22%;
+  --input: 52 18% 22%;
+  --ring: 50 93% 51%;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+html, body { height: 100%; }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  @apply bg-black text-foreground antialiased overflow-x-hidden;
+}
+
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: #0a0a0a; }
+::-webkit-scrollbar-thumb { background: #2b2b2b; border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: #f2d00d; }
+
+@layer utilities {
+  .surface { @apply bg-card/90 border border-border; }
+  .hover-lift { @apply transition-transform duration-300 hover:-translate-y-1; }
+  .press { @apply active:translate-y-0 active:scale-[0.99]; }
+  .soft-border { box-shadow: 0 0 0 1px rgba(255,255,255,0.06) inset; }
 }
