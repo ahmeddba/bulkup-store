@@ -10,8 +10,49 @@ const lexend = Lexend({
 })
 
 export const metadata: Metadata = {
-  title: "Bulkup Store",
-  description: "Suppléments premium livrés via WhatsApp.",
+  title: "Bulkup Store - Suppléments Premium pour Athlètes",
+  description: "Suppléments premium de haute qualité pour athlètes. Protéines, créatine, pré-entraînement et plus. Livraison rapide via WhatsApp - aucun compte requis.",
+  keywords: ["suppléments", "protéines", "créatine", "pré-entraînement", "nutrition sportive", "musculation", "fitness"],
+  authors: [{ name: "Bulkup Store" }],
+  creator: "Bulkup Store",
+  publisher: "Bulkup Store",
+  openGraph: {
+    type: "website",
+    locale: "fr_FR",
+    url: "https://bulkup-store.com",
+    siteName: "Bulkup Store",
+    title: "Bulkup Store - Suppléments Premium pour Athlètes",
+    description: "Suppléments premium de haute qualité pour athlètes. Protéines, créatine, pré-entraînement et plus. Livraison rapide via WhatsApp.",
+    images: [
+      {
+        url: "/logoblack.png",
+        width: 1200,
+        height: 630,
+        alt: "Bulkup Store - Suppléments Premium",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Bulkup Store - Suppléments Premium pour Athlètes",
+    description: "Suppléments premium de haute qualité pour athlètes. Livraison rapide via WhatsApp - aucun compte requis.",
+    images: ["/hero.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  verification: {
+    // Add your verification codes here when you set up Google Search Console, etc.
+    // google: 'your-google-verification-code',
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
