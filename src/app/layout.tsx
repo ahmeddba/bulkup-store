@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { Lexend } from "next/font/google"
 import "./globals.css"
 import { Header } from "@/components/header/Header"
+import { PromoBanner } from "@/components/header/PromoBanner"
 
 const lexend = Lexend({
   subsets: ["latin"],
@@ -36,7 +37,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Bulkup Store - Suppléments Premium pour Athlètes",
     description: "Suppléments premium de haute qualité pour athlètes. Livraison rapide via WhatsApp - aucun compte requis.",
-    images: ["/hero.png"],
+    images: ["/logoblack.png"],
   },
   robots: {
     index: true,
@@ -59,6 +60,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="fr" className="dark">
       <body className={lexend.className}>
+        <PromoBanner />
         <Header />
         <main className="min-h-[calc(100vh-64px)]">{children}</main>
         <footer className="mt-10 border-t border-border bg-[#13120d] py-6">

@@ -13,10 +13,10 @@ export default function CheckoutPage() {
 
       <div className="grid gap-8 lg:grid-cols-12 lg:gap-12">
         <div className="lg:col-span-7">
-          <CartSummary currency="USD" />
+          <CartSummary currency="TND" />
         </div>
         <div className="lg:col-span-5">
-          <CheckoutForm currency="USD" />
+          <CheckoutForm currency="TND" />
         </div>
       </div>
 

@@ -15,7 +15,7 @@ export default async function HomePage() {
       <FeatureCards />
       <ProductGrid products={products} />
       {/* Only Home gets the sticky cart bar (matches screenshot) */}
-      <StickyCartBar currency="USD" />
+      <StickyCartBar currency="TND" />
     </div>
   )
 }
