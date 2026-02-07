@@ -26,7 +26,6 @@ export function buildWhatsAppMessage(items: CartItem[], currency: string, payloa
   lines.push(`Name: ${payload.fullName}`)
   lines.push(`WhatsApp: ${payload.whatsappNumber}`)
   lines.push(`Address: ${payload.address}`)
-  if (payload.coords) lines.push(`Location: ${payload.coords.lat}, ${payload.coords.lng}`)
   lines.push("")
   lines.push("No payment now — pay upon delivery.")
 

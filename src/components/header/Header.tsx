@@ -5,6 +5,7 @@ import { CartButton } from "./CartButton"
 import { MobileNavSheet } from "./MobileNavSheet"
 import { cn } from "@/lib/utils"
 import Image from "next/image"
+import { CATEGORIES } from "@/lib/categories"
 
 function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
   return (
@@ -34,12 +35,11 @@ export function Header() {
         <NavigationMenu className="hidden lg:block">
           <NavigationMenuList className="gap-4 xl:gap-8">
             <NavLink href="/">Home</NavLink>
-            <NavLink href="/category/proteins">Proteins</NavLink>
-            <NavLink href="/category/creatine-strength">Creatine</NavLink>
-            <NavLink href="/category/preworkout-energy">Pre-Workout</NavLink>
-            <NavLink href="/category/fat-burners">Fat Burners</NavLink>
-            <NavLink href="/category/vitamins-minerals">Vitamins</NavLink>
-            <NavLink href="/category/accessories">Accessories</NavLink>
+            {CATEGORIES.map((category) => (
+              <NavLink key={category.slug} href={`/category/${category.slug}`}>
+                {category.label}
+              </NavLink>
+            ))}
           </NavigationMenuList>
         </NavigationMenu>
 

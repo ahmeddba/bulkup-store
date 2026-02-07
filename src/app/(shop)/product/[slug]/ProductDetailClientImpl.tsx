@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react"
 import { Badge } from "@/components/ui/badge"
-import { formatMoney } from "@/lib/utils"
+import { formatTND } from "@/lib/utils"
 import { ProductGallery } from "@/components/product/ProductGallery"
 import { BenefitsCard } from "@/components/product/BenefitsCard"
 import { SizeSelector } from "@/components/product/SizeSelector"
@@ -22,12 +22,13 @@ export default function ProductDetailClientImpl({
     sku: string
     inStock: boolean
     currency: string
-    priceCents: number
-    compareAtCents: number | null
+    price: number // Final price (already discounted) in TND
+    originalPrice: number // Price before discount in TND
+    discountPercent: number // Discount percentage
     isBestSeller: boolean
   }
   images: { url: string; alt: string }[]
-  variants: { id: string; label: string; unitPriceCents: number }[]
+  variants: { id: string; label: string; price: number }[]
   benefits: string[]
 }) {
   const initialVariant = variants[0]?.id ?? ""
@@ -35,7 +36,14 @@ export default function ProductDetailClientImpl({
   const [qty, setQty] = useState(1)
 
   const selected = useMemo(() => variants.find((v) => v.id === variantId) ?? variants[0], [variantId, variants])
-  const unitPrice = selected?.unitPriceCents ?? product.priceCents
+  
+  // Use selected variant price (variants come from DB with actual prices)
+  const displayPrice = selected?.price ?? product.price
+  const displayPriceCents = Math.round(displayPrice * 100)
+  
+  // Calculate original price (10% discount): original = price / 0.9
+  const displayOriginalPrice = displayPrice / 0.9
+  const hasDiscount = displayPrice > 0 // Always show discount if we have a price
 
   return (
     <div className="mt-4 grid grid-cols-1 gap-10 lg:grid-cols-12">
@@ -54,7 +62,13 @@ export default function ProductDetailClientImpl({
             ) : (
               <Badge className="bg-red-500/20 text-red-300 font-extrabold">Rupture de Stock</Badge>
             )}
-            <span className="text-xs font-semibold text-white/55">Réf: {product.sku}</span>
+            
+            {/* Discount Badge */}
+            {hasDiscount ? (
+              <Badge className="bg-green-600 text-white font-extrabold">
+                -10%
+              </Badge>
+            ) : null}
           </div>
 
           <h1 className="text-3xl font-black leading-tight tracking-tight text-white md:text-4xl">
@@ -62,10 +76,12 @@ export default function ProductDetailClientImpl({
           </h1>
 
           <div className="mt-2 flex items-end gap-3">
-            <div className="text-3xl font-black text-primary">{formatMoney(unitPrice, product.currency)}</div>
-            {product.compareAtCents ? (
+            <div className="text-3xl font-black text-primary">
+              {formatTND(displayPrice)}
+            </div>
+            {hasDiscount ? (
               <div className="mb-1 text-lg font-semibold text-white/55 line-through">
-                {formatMoney(product.compareAtCents, product.currency)}
+                {formatTND(displayOriginalPrice)}
               </div>
             ) : null}
           </div>
@@ -76,14 +92,32 @@ export default function ProductDetailClientImpl({
         <BenefitsCard benefits={benefits} />
 
         <div className="space-y-4">
-          <SizeSelector value={variantId} options={variants} onChange={setVariantId} />
+          <SizeSelector 
+            value={variantId} 
+            options={variants.map(v => ({
+              id: v.id,
+              label: v.label,
+              unitPriceCents: Math.round(v.price * 100)
+            }))} 
+            onChange={setVariantId} 
+          />
 
           <div className="mt-2 flex flex-col gap-4 sm:flex-row">
             <QuantityStepper value={qty} onChange={setQty} className="sm:w-32" />
 
             <AddToCartButton
-              product={{ id: product.id, slug: product.slug, name: product.name, sku: product.sku, currency: product.currency }}
-              variant={{ id: selected.id, label: selected.label, unitPriceCents: selected.unitPriceCents }}
+              product={{ 
+                id: product.id, 
+                slug: product.slug, 
+                name: product.name, 
+                sku: product.sku, 
+                currency: product.currency 
+              }}
+              variant={{ 
+                id: selected.id, 
+                label: selected.label, 
+                unitPriceCents: Math.round(selected.price * 100)
+              }}
               imageUrl={images[0]?.url}
               qty={qty}
               className="h-14 flex-1 rounded-lg bg-primary text-lg font-black text-black shadow-glow-yellow hover:bg-[#d9ba0b] hover:shadow-[0_0_20px_rgba(242,208,13,0.35)] press"
@@ -99,15 +133,15 @@ export default function ProductDetailClientImpl({
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#393728] text-primary">🏬</div>
             <div>
-              <div className="text-sm font-extrabold text-white">Magasin Local</div>
-              <div className="text-xs font-semibold text-white/55">Disponible au Centre-Ville</div>
+              <div className="text-xs font-semibold text-white/55">Enlèvement</div>
+              <div className="text-sm font-extrabold text-white">En Magasin</div>
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#393728] text-primary">💬</div>
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#393728] text-primary">🚚</div>
             <div>
-              <div className="text-sm font-extrabold text-white">Support WhatsApp</div>
-              <div className="text-xs font-semibold text-white/55">Aide instantanée 9h - 21h</div>
+              <div className="text-xs font-semibold text-white/55">Livraison</div>
+              <div className="text-sm font-extrabold text-white">En 24-48H</div>
             </div>
           </div>
         </div>

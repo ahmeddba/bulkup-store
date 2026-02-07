@@ -1,24 +1,18 @@
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { formatMoney } from "@/lib/utils"
-import type { ProductWithMedia } from "@/lib/supabase/queries"
-import { AddToCartButton } from "../product/QuantityStepper"
+import { formatTND } from "@/lib/utils"
+import type { ShapedProduct } from "@/lib/product-shape"
 
-function firstImageUrl(p: ProductWithMedia) {
-  const img = p.product_images?.[0]
-  if (!img) return "/placeholder.jpg"
-  const base = process.env.NEXT_PUBLIC_SUPABASE_URL
-  return `${base}/storage/v1/object/public/product-images/${img.storage_path}`
-}
+export function ProductCard({ product }: { product: ShapedProduct }) {
+  const image = product.images[0]?.url ?? "/placeholder.jpg"
+  const hot = product.isBestSeller
+  const isNew = false // Can add is_promotion field to schema if needed
 
-export function ProductCard({ product }: { product: ProductWithMedia }) {
-  const image = firstImageUrl(product)
-  const hot = product.is_best_seller
-  const isNew = product.is_promotion
-
-  const defaultVariant = product.product_variants?.[0]
-  const unit = product.price_cents + (defaultVariant?.price_delta_cents ?? 0)
+  const defaultVariant = product.variants[0]
+  const unitPriceCents = Math.round(product.defaultPrice * 100) // For cart compatibility
+  
+  // Check if there's a discount
+  const hasDiscount = product.originalPrice > product.defaultPrice
 
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-xl border border-white/5 bg-[#141414] transition-all duration-300 hover:border-primary/50 hover:shadow-[0_0_15px_rgba(0,0,0,0.5)]">
@@ -39,6 +33,15 @@ export function ProductCard({ product }: { product: ProductWithMedia }) {
           </div>
         ) : null}
 
+        {/* Discount Badge */}
+        {hasDiscount && product.discountPercent > 0 ? (
+          <div className="absolute right-3 top-3 z-10">
+            <Badge className="rounded-sm bg-green-600 text-[10px] font-extrabold uppercase tracking-wide text-white">
+              -{product.discountPercent}%
+            </Badge>
+          </div>
+        ) : null}
+
         <div
           className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110"
           style={{ backgroundImage: `url('${image}')` }}
@@ -52,34 +55,20 @@ export function ProductCard({ product }: { product: ProductWithMedia }) {
           </div>
         </Link>
         <div className="mt-1 text-xs text-white/40">
-          {defaultVariant?.label ? defaultVariant.label : product.sku}
+          {defaultVariant?.size ?? product.sku}
         </div>
 
-        <div className="mt-auto flex items-center justify-between pt-3">
-          <div className="text-lg font-black text-primary">{formatMoney(unit, product.currency)}</div>
-
-          {defaultVariant ? (
-            <AddToCartButton
-              product={{
-                id: product.id,
-                slug: product.slug,
-                name: product.name,
-                sku: product.sku,
-                currency: product.currency,
-              }}
-              variant={{
-                id: defaultVariant.id,
-                label: defaultVariant.label,
-                unitPriceCents: unit,
-              }}
-              imageUrl={image}
-              className="hidden h-9 rounded bg-white/10 px-4 text-sm font-extrabold text-white hover:bg-primary hover:text-black md:inline-flex"
-            />
-          ) : (
-            <Button className="hidden h-9 rounded bg-white/10 px-4 text-sm font-extrabold text-white md:inline-flex" disabled>
-              Ajouter
-            </Button>
-          )}
+        <div className="mt-auto pt-3">
+          <div className="flex flex-col gap-1">
+            <div className="text-lg font-black text-primary">
+              {formatTND(product.defaultPrice)}
+            </div>
+            {hasDiscount ? (
+              <div className="text-xs font-semibold text-white/40 line-through">
+                {formatTND(product.originalPrice)}
+              </div>
+            ) : null}
+          </div>
         </div>
       </div>
     </div>

@@ -5,6 +5,7 @@ import { Minus, Plus, ShoppingCart } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { readCart, writeCart, type CartItem } from "@/lib/cart"
+import { AddToCartConfirmDialog } from "./AddToCartConfirmDialog"
 
 export function QuantityStepper({
   value,
@@ -52,9 +53,10 @@ export function AddToCartButton({
   qty?: number
 }) {
   const [busy, setBusy] = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
   const finalQty = useMemo(() => qty ?? 1, [qty])
 
-  const add = useCallback(() => {
+  const handleConfirm = useCallback(() => {
     setBusy(true)
     try {
       const state = readCart()
@@ -77,19 +79,35 @@ export function AddToCartButton({
       }
       writeCart(state)
       window.dispatchEvent(new Event("bulkup:cart"))
+      setShowConfirm(false)
     } finally {
       setBusy(false)
     }
   }, [finalQty, imageUrl, product.id, product.name, product.sku, product.slug, variant.id, variant.label, variant.unitPriceCents])
 
   return (
-    <Button
-      type="button"
-      onClick={add}
-      disabled={busy}
-      className={cn(className)}
-    >
-      Ajouter <ShoppingCart className="ml-2 h-4 w-4" />
-    </Button>
+    <>
+      <Button
+        type="button"
+        onClick={() => setShowConfirm(true)}
+        disabled={busy}
+        className={cn(className)}
+      >
+        Ajouter <ShoppingCart className="ml-2 h-4 w-4" />
+      </Button>
+
+      <AddToCartConfirmDialog
+        open={showConfirm}
+        onOpenChange={setShowConfirm}
+        onConfirm={handleConfirm}
+        product={{
+          name: product.name,
+          imageUrl,
+        }}
+        variant={variant}
+        qty={finalQty}
+        currency={product.currency}
+      />
+    </>
   )
 }

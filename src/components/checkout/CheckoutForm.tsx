@@ -13,8 +13,9 @@ export function CheckoutForm({ currency = "USD" }: { currency?: string }) {
   const [fullName, setFullName] = useState("")
   const [phone, setPhone] = useState("")
   const [address, setAddress] = useState("")
-  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null)
   const [busy, setBusy] = useState(false)
+  const [gpsLoading, setGpsLoading] = useState(false)
+  const [gpsError, setGpsError] = useState<string>("")
 
   const canSubmit = useMemo(() => {
     const items = readCart().items
@@ -22,10 +23,48 @@ export function CheckoutForm({ currency = "USD" }: { currency?: string }) {
   }, [address, fullName, phone])
 
   const captureGPS = async () => {
-    if (!navigator.geolocation) return
+    if (!navigator.geolocation) {
+      setGpsError("GPS non disponible sur cet appareil")
+      return
+    }
+    
+    setGpsLoading(true)
+    setGpsError("")
+    
     navigator.geolocation.getCurrentPosition(
-      (pos) => setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      () => setCoords(null),
+      (pos) => {
+        const lat = pos.coords.latitude.toFixed(6)
+        const lng = pos.coords.longitude.toFixed(6)
+        
+        // Create Google Maps link
+        const mapsLink = `https://www.google.com/maps?q=${lat},${lng}`
+        setAddress((prev) => {
+          // If address is empty, just set the maps link
+          if (!prev.trim()) return mapsLink
+          // If there's already a maps link, replace it
+          if (prev.includes("google.com/maps")) {
+            return prev.replace(/https:\/\/www\.google\.com\/maps\?q=[-\d.]+,[-\d.]+/, mapsLink)
+          }
+          // Otherwise append to existing address
+          return `${prev} | ${mapsLink}`
+        })
+        
+        setGpsLoading(false)
+        setGpsError("")
+      },
+      (error) => {
+        setGpsLoading(false)
+        if (error.code === error.PERMISSION_DENIED) {
+          setGpsError("Permission GPS refusée")
+        } else if (error.code === error.POSITION_UNAVAILABLE) {
+          setGpsError("Position GPS indisponible")
+        } else if (error.code === error.TIMEOUT) {
+          setGpsError("Délai d'attente GPS dépassé")
+        } else {
+          setGpsError("Erreur GPS")
+        }
+
+      },
       { enableHighAccuracy: true, timeout: 8000 }
     )
   }
@@ -38,7 +77,6 @@ export function CheckoutForm({ currency = "USD" }: { currency?: string }) {
         fullName,
         whatsappNumber: phone,
         address,
-        coords,
       })
     } finally {
       setBusy(false)
@@ -94,15 +132,36 @@ export function CheckoutForm({ currency = "USD" }: { currency?: string }) {
             <Button
               type="button"
               onClick={captureGPS}
+              disabled={gpsLoading}
               variant="outline"
-              className="h-12 w-12 border-border bg-[#181711] text-primary hover:border-primary hover:bg-primary/10"
+              className="h-12 w-12 border-border bg-[#181711] text-primary hover:border-primary hover:bg-primary/10 disabled:opacity-50"
               aria-label="Utiliser mon GPS"
               title="Utiliser mon GPS"
             >
-              <Crosshair className="h-5 w-5" />
+              {gpsLoading ? (
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+              ) : (
+                <Crosshair className="h-5 w-5" />
+              )}
             </Button>
           </div>
-          <div className="ml-1 text-xs italic text-white/45">* Nous confirmerons l'emplacement exact par chat.</div>
+          
+          {/* GPS Feedback Messages */}
+          {gpsLoading === false && !gpsError && address.includes('google.com/maps') && (
+            <div className="ml-1 flex items-center gap-1 text-xs font-semibold text-green-400">
+              <span>✓</span>
+              <span>Position GPS capturée avec succès</span>
+            </div>
+          )}
+          {gpsError && (
+            <div className="ml-1 flex items-center gap-1 text-xs font-semibold text-red-400">
+              <span>✗</span>
+              <span>{gpsError}</span>
+            </div>
+          )}
+          {!address.includes('google.com/maps') && !gpsError && (
+            <div className="ml-1 text-xs italic text-white/45">* Nous confirmerons l'emplacement exact par chat.</div>
+          )}
         </div>
 
         <div className="my-2 h-px bg-border" />

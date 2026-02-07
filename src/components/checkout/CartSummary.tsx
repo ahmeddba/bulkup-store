@@ -1,7 +1,8 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { Trash2 } from "lucide-react"
+import { Trash2, ShoppingBag } from "lucide-react"
+import Link from "next/link"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { formatMoney } from "@/lib/utils"
@@ -28,7 +29,12 @@ export function CartSummary({ currency = "USD" }: { currency?: string }) {
   }, [])
 
   const subtotal = useMemo(() => cartSubtotalCents({ items }), [items])
-  const delivery = 0
+  
+  // Shipping: 7 TND (700 cents) if subtotal < 300 TND (30000 cents), otherwise free
+  const FREE_SHIPPING_THRESHOLD = 30000 // 300 TND in cents
+  const SHIPPING_FEE = 700 // 7 TND in cents
+  const delivery = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_FEE
+  
   const total = subtotal + delivery
 
   const remove = (variantId: string) => {
@@ -36,6 +42,28 @@ export function CartSummary({ currency = "USD" }: { currency?: string }) {
     state.items = state.items.filter((x) => x.variantId !== variantId)
     writeCart(state)
     window.dispatchEvent(new Event("bulkup:cart"))
+  }
+
+  // Show empty cart state
+  if (items.length === 0) {
+    return (
+      <Card className="overflow-hidden rounded-xl border-border bg-[#23221b] p-12">
+        <div className="flex flex-col items-center justify-center text-center">
+          <div className="mb-6 rounded-full bg-primary/10 p-6">
+            <ShoppingBag className="h-16 w-16 text-primary" />
+          </div>
+          <h2 className="mb-3 text-2xl font-black text-white">Votre panier est vide</h2>
+          <p className="mb-8 text-sm font-semibold text-white/55">
+            Découvrez nos produits et choisissez ce qui vous convient
+          </p>
+          <Link href="/products">
+            <Button className="h-12 rounded-xl bg-primary px-8 text-base font-black text-black shadow-glow-yellow hover:bg-[#ffe033]">
+              Retour à nos Produits
+            </Button>
+          </Link>
+        </div>
+      </Card>
+    )
   }
 
   return (
@@ -93,8 +121,15 @@ export function CartSummary({ currency = "USD" }: { currency?: string }) {
           </div>
           <div className="flex justify-between text-sm text-white/55">
             <span>Frais de Livraison</span>
-            <span>Gratuit</span>
+            <span className={delivery === 0 ? "text-primary font-semibold" : ""}>
+              {delivery === 0 ? "Gratuit ✓" : formatMoney(delivery, currency)}
+            </span>
           </div>
+          {subtotal > 0 && subtotal < FREE_SHIPPING_THRESHOLD && (
+            <div className="text-xs text-primary/80 italic">
+              Ajoutez {formatMoney(FREE_SHIPPING_THRESHOLD - subtotal, currency)} pour profiter de la livraison gratuite
+            </div>
+          )}
           <div className="my-2 h-px bg-border" />
           <div className="flex items-center justify-between">
             <span className="text-lg font-extrabold text-white">Total</span>

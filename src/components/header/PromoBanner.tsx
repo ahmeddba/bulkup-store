@@ -10,6 +10,8 @@ export function PromoBanner() {
             <span className="text-primary">OFFRE SPÉCIALE</span>
             {" · "}
             Profitez de <span className="text-primary">10% de réduction</span> sur tous les produits du site
+            {" · "}
+            <span className="text-primary">Livraison Gratuite</span> pour toute commande au-dessus de 300 TND
           </p>
           <Tag className="h-4 w-4 text-primary animate-pulse" />
         </div>

@@ -5,15 +5,14 @@ import { useState } from "react"
 import { Menu } from "lucide-react"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
+import { CATEGORIES } from "@/lib/categories"
 
 const links = [
   { href: "/", label: "Home" },
-  { href: "/category/proteins", label: "Proteins" },
-  { href: "/category/creatine", label: "Creatine" },
-  { href: "/category/preworkout-energy", label: "Pre-Workout" },
-  { href: "/category/fat-burners", label: "Fat Burners" },
-  { href: "/category/vitamins-minerals", label: "Vitamins" },
-  { href: "/category/accessories", label: "Accessories" },
+  ...CATEGORIES.map((cat) => ({
+    href: `/category/${cat.slug}`,
+    label: cat.label,
+  })),
 ]
 
 export function MobileNavSheet() {
