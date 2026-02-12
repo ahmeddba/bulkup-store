@@ -31,6 +31,7 @@ export function ProductGallery({ images, bestSeller }: { images: GalleryImage[];
             className="object-contain p-4 transition-transform duration-500 group-hover:scale-105"
             sizes="(max-width: 768px) 100vw, 50vw"
             priority
+            unoptimized
           />
           
           {bestSeller ? (
@@ -63,6 +64,7 @@ export function ProductGallery({ images, bestSeller }: { images: GalleryImage[];
                 fill
                 className="object-contain p-1"
                 sizes="100px"
+                unoptimized
               />
             </button>
           ))}

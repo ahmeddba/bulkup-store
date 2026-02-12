@@ -1,6 +1,6 @@
 "use client"
 
-import Image from "next/image"
+
 
 export function StoreLocationMap() {
   const googleMapsUrl = "https://www.google.com/maps/place/Bulkup+store/@36.9001769,10.1860537,17z/data=!3m1!4b1!4m6!3m5!1s0x12e2cbdb800e0c75:0x61de9973afff2970!8m2!3d36.9001769!4d10.1860537!16s%2Fg%2F11xyp8__x8?entry=ttu&g_ep=EgoyMDI2MDIwNC4wIKXMDSoASAFQAw%3D%3D"
