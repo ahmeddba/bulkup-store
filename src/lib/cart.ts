@@ -8,6 +8,7 @@ export type CartItem = {
   variantLabel: string
   unitPriceCents: number
   qty: number
+  flavor?: string
 }
 
 export type CartState = {

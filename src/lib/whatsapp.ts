@@ -15,8 +15,9 @@ export function buildWhatsAppMessage(items: CartItem[], currency: string, payloa
   lines.push("Items:")
   items.forEach((it, idx) => {
     const itemTotal = it.unitPriceCents * it.qty
+    const flavorText = it.flavor ? ` (${it.flavor})` : ""
     lines.push(
-      `${idx + 1}) ${it.name} — ${it.variantLabel} x${it.qty} = ${formatMoney(itemTotal, currency)}`
+      `${idx + 1}) ${it.name} — ${it.variantLabel}${flavorText} x${it.qty} = ${formatMoney(itemTotal, currency)}`
     )
   })
   const total = items.reduce((s, it) => s + it.unitPriceCents * it.qty, 0)

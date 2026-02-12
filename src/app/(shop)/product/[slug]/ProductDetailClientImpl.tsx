@@ -6,6 +6,7 @@ import { formatTND } from "@/lib/utils"
 import { ProductGallery } from "@/components/product/ProductGallery"
 import { BenefitsCard } from "@/components/product/BenefitsCard"
 import { SizeSelector } from "@/components/product/SizeSelector"
+import { FlavorSelector } from "@/components/product/FlavorSelector"
 import { QuantityStepper, AddToCartButton } from "@/components/product/QuantityStepper"
 
 export default function ProductDetailClientImpl({
@@ -26,6 +27,7 @@ export default function ProductDetailClientImpl({
     originalPrice: number // Price before discount in TND
     discountPercent: number // Discount percentage
     isBestSeller: boolean
+    flavors: string[]
   }
   images: { url: string; alt: string }[]
   variants: { id: string; label: string; price: number }[]
@@ -33,6 +35,8 @@ export default function ProductDetailClientImpl({
 }) {
   const initialVariant = variants[0]?.id ?? ""
   const [variantId, setVariantId] = useState(initialVariant)
+  const initialFlavor = product.flavors?.[0] ?? ""
+  const [flavor, setFlavor] = useState(initialFlavor)
   const [qty, setQty] = useState(1)
 
   const selected = useMemo(() => variants.find((v) => v.id === variantId) ?? variants[0], [variantId, variants])
@@ -91,7 +95,14 @@ export default function ProductDetailClientImpl({
 
         <BenefitsCard benefits={benefits} />
 
+
         <div className="space-y-4">
+          <FlavorSelector 
+            value={flavor} 
+            options={product.flavors ?? []} 
+            onChange={setFlavor} 
+          />
+
           <SizeSelector 
             value={variantId} 
             options={variants.map(v => ({
@@ -120,6 +131,7 @@ export default function ProductDetailClientImpl({
               }}
               imageUrl={images[0]?.url}
               qty={qty}
+              flavor={flavor}
               className="h-14 flex-1 rounded-lg bg-primary text-lg font-black text-black shadow-glow-yellow hover:bg-[#d9ba0b] hover:shadow-[0_0_20px_rgba(242,208,13,0.35)] press"
             />
           </div>

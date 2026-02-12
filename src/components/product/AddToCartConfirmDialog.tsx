@@ -25,6 +25,7 @@ type AddToCartConfirmDialogProps = {
     label: string
     unitPriceCents: number
   }
+  flavor?: string
   qty: number
   currency: string
 }
@@ -35,6 +36,7 @@ export function AddToCartConfirmDialog({
   onConfirm,
   product,
   variant,
+  flavor,
   qty,
   currency,
 }: AddToCartConfirmDialogProps) {
@@ -69,6 +71,7 @@ export function AddToCartConfirmDialog({
             <div className="flex-1">
               <div className="text-lg font-bold text-white">{product.name}</div>
               <div className="mt-1 text-sm text-white/55">{variant.label}</div>
+              {flavor && <div className="mt-0.5 text-sm text-primary font-semibold">Saveur: {flavor}</div>}
             </div>
           </div>
 
@@ -81,6 +84,16 @@ export function AddToCartConfirmDialog({
               </div>
               <div className="font-semibold text-white">{variant.label}</div>
             </div>
+
+            {flavor && (
+              <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center gap-2 text-white/55">
+                  <span className="text-lg">👅</span>
+                  <span>Saveur</span>
+                </div>
+                <div className="font-semibold text-white">{flavor}</div>
+              </div>
+            )}
 
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center gap-2 text-white/55">

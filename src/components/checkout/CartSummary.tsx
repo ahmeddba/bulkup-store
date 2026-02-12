@@ -37,9 +37,12 @@ export function CartSummary({ currency = "USD" }: { currency?: string }) {
   
   const total = subtotal + delivery
 
-  const remove = (variantId: string) => {
+  const remove = (variantId: string, flavor?: string) => {
     const state = readCart()
-    state.items = state.items.filter((x) => x.variantId !== variantId)
+    // Remove only the item that matches BOTH variantId AND flavor (undefined matches undefined)
+    state.items = state.items.filter((x) => 
+      !(x.variantId === variantId && (x.flavor === flavor || (!x.flavor && !flavor)))
+    )
     writeCart(state)
     window.dispatchEvent(new Event("bulkup:cart"))
   }
@@ -85,7 +88,10 @@ export function CartSummary({ currency = "USD" }: { currency?: string }) {
               <div className="flex items-start justify-between gap-2">
                 <div>
                   <div className="text-base font-semibold text-white lg:text-lg">{it.name}</div>
-                  <div className="text-xs text-white/45">{it.variantLabel}</div>
+                  <div className="text-xs text-white/45">
+                    {it.variantLabel}
+                    {it.flavor && <span className="ml-1 text-primary">• {it.flavor}</span>}
+                  </div>
                 </div>
                 <div className="text-lg font-extrabold text-primary">
                   {formatMoney(it.unitPriceCents * it.qty, currency)}
@@ -102,7 +108,7 @@ export function CartSummary({ currency = "USD" }: { currency?: string }) {
                   variant="ghost"
                   size="icon"
                   className="text-red-400 hover:bg-red-400/10 hover:text-red-300"
-                  onClick={() => remove(it.variantId)}
+                  onClick={() => remove(it.variantId, it.flavor)}
                   aria-label="Retirer l'article"
                 >
                   <Trash2 className="h-5 w-5" />

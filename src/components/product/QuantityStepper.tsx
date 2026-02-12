@@ -45,12 +45,14 @@ export function AddToCartButton({
   imageUrl,
   className,
   qty,
+  flavor,
 }: {
   product: { id: string; slug: string; name: string; sku: string; currency: string }
   variant: { id: string; label: string; unitPriceCents: number }
   imageUrl?: string
   className?: string
   qty?: number
+  flavor?: string
 }) {
   const [busy, setBusy] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
@@ -60,7 +62,12 @@ export function AddToCartButton({
     setBusy(true)
     try {
       const state = readCart()
-      const existing = state.items.find((x) => x.variantId === variant.id)
+      // Check if existing item matches variant AND flavor
+      const existing = state.items.find((x) => 
+        x.variantId === variant.id && 
+        (x.flavor === flavor || (!x.flavor && !flavor))
+      )
+      
       if (existing) {
         existing.qty += finalQty
       } else {
@@ -74,6 +81,7 @@ export function AddToCartButton({
           variantLabel: variant.label,
           unitPriceCents: variant.unitPriceCents,
           qty: finalQty,
+          flavor,
         }
         state.items.unshift(item)
       }
@@ -83,7 +91,7 @@ export function AddToCartButton({
     } finally {
       setBusy(false)
     }
-  }, [finalQty, imageUrl, product.id, product.name, product.sku, product.slug, variant.id, variant.label, variant.unitPriceCents])
+  }, [finalQty, imageUrl, product.id, product.name, product.sku, product.slug, variant.id, variant.label, variant.unitPriceCents, flavor])
 
   return (
     <>
@@ -105,6 +113,7 @@ export function AddToCartButton({
           imageUrl,
         }}
         variant={variant}
+        flavor={flavor}
         qty={finalQty}
         currency={product.currency}
       />

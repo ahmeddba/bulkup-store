@@ -66,6 +66,7 @@ export default async function ProductPage({
           originalPrice: product.originalPrice, // Price before discount
           discountPercent: product.discountPercent, // Discount percentage
           isBestSeller: product.isBestSeller,
+          flavors: product.flavors,
         }}
         images={images}
         variants={variants}
