@@ -101,7 +101,6 @@ export function CartSummary({ currency = "USD" }: { currency?: string }) {
               <div className="mt-2 flex items-end justify-between">
                 <div className="flex items-center gap-3">
                   <span className="rounded bg-black/30 px-2 py-1 text-sm text-white/55">Qté: {it.qty}</span>
-                  <button className="text-xs font-semibold text-white/55 hover:text-white">Modifier</button>
                 </div>
 
                 <Button

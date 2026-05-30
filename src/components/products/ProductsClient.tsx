@@ -97,7 +97,9 @@ export function ProductsClient({ products, brands }: ProductsClientProps) {
                 className="w-full appearance-none rounded-lg border border-white/10 bg-[#1a1a1a] px-4 py-3 pr-10 text-sm font-semibold text-white focus:border-primary focus:outline-none"
               >
                 <option value="">Toutes les marques</option>
-                {brands.map((brand) => (
+                {brands
+                  .filter((brand) => brand.name.toLowerCase() !== "unknown")
+                  .map((brand) => (
                   <option key={brand.id} value={brand.slug}>
                     {brand.name}
                   </option>
