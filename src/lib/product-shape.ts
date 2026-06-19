@@ -90,12 +90,17 @@ export function shapeProductWithRelations(product: ProductWithRelations): Shaped
 
   // Sort variants and extract with proper price validation
   // Variants in DB have format: {"sort":1,"label":"480ml","price_dt":180}
-  const variants: ShapedVariant[] = (Array.isArray(product.variants) ? product.variants : [])
+  let variants: ShapedVariant[] = (Array.isArray(product.variants) ? product.variants : [])
     .map((v: any) => {
       // Read price_dt from variant (not "price")
       const priceDt = v.price_dt || v.price || 0
       const parsedPrice = Number(priceDt)
-      const price = isNaN(parsedPrice) ? 0 : parsedPrice
+      let price = isNaN(parsedPrice) ? 0 : parsedPrice
+      
+      // If variant price is 0 but product has a global price, use it
+      if (price === 0 && product.price > 0) {
+        price = product.price
+      }
       
       return {
         size: v.label || v.size || "",
@@ -106,6 +111,10 @@ export function shapeProductWithRelations(product: ProductWithRelations): Shaped
 
   // Fallback: use product.price if no valid variants
   const priceTND = product.price
+  
+  if (variants.length === 0 && priceTND > 0) {
+    variants = [{ size: "", price: priceTND }]
+  }
   
   // Default price: use first variant's price if available, otherwise use product price
   const defaultPrice = (variants.length > 0 && variants[0].price > 0) 

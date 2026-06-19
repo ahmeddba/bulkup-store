@@ -125,9 +125,9 @@ export default function ProductDetailClientImpl({
                 currency: product.currency 
               }}
               variant={{ 
-                id: selected.id, 
-                label: selected.label, 
-                unitPriceCents: Math.round(selected.price * 100)
+                id: selected?.id ?? "", 
+                label: selected?.label ?? "", 
+                unitPriceCents: Math.round((selected?.price ?? product.price) * 100)
               }}
               imageUrl={images[0]?.url}
               qty={qty}
