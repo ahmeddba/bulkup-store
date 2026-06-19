@@ -29,7 +29,7 @@ export function QuantityStepper({
       <div className="text-lg font-black text-white">{value}</div>
       <button
         type="button"
-        onClick={() => onChange(value + 1)}
+        onClick={() => onChange(Math.min(10, value + 1))}
         className="p-2 text-white/60 transition-colors hover:text-white"
         aria-label="Augmenter la quantité"
       >

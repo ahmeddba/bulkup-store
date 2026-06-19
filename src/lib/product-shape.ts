@@ -121,9 +121,10 @@ export function shapeProductWithRelations(product: ProductWithRelations): Shaped
     ? variants[0].price 
     : priceTND
   
-  // Calculate original price (before 10% discount): original = price / 0.9
-  // This means: price = original * 0.9, so original = price / 0.9
-  const calculatedOriginalPrice = defaultPrice / 0.9
+  // Fetch original price safely - default to defaultPrice if original not meaningful
+  const originalPriceTND = product.original_price > 0 ? product.original_price : defaultPrice;
+  const calculatedOriginalPrice = originalPriceTND > defaultPrice ? originalPriceTND : defaultPrice;
+  const discountPercent = product.discount_percent || 0;
 
   // Parse benefits from text[] array
   const benefits: string[] = Array.isArray(product.benefits)
@@ -159,7 +160,7 @@ export function shapeProductWithRelations(product: ProductWithRelations): Shaped
     
     defaultPrice,
     originalPrice: calculatedOriginalPrice,
-    discountPercent: 10, // Always 10% discount
+    discountPercent,
     variants,
     
     flavors,

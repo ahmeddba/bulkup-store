@@ -45,9 +45,9 @@ export default function ProductDetailClientImpl({
   const displayPrice = selected?.price ?? product.price
   const displayPriceCents = Math.round(displayPrice * 100)
   
-  // Calculate original price (10% discount): original = price / 0.9
-  const displayOriginalPrice = displayPrice / 0.9
-  const hasDiscount = displayPrice > 0 // Always show discount if we have a price
+  // Use actual originalPrice from product schema instead of deceptive fake calculation
+  const displayOriginalPrice = product.originalPrice > displayPrice ? product.originalPrice : displayPrice
+  const hasDiscount = displayPrice > 0 && product.discountPercent > 0 && displayOriginalPrice > displayPrice
 
   return (
     <div className="mt-4 grid grid-cols-1 gap-10 lg:grid-cols-12">

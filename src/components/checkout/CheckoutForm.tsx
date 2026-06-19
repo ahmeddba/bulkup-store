@@ -7,7 +7,6 @@ import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { MapPin, Phone, User, Crosshair } from "lucide-react"
 import { readCart } from "@/lib/cart"
-import { openWhatsAppOrder } from "@/lib/whatsapp"
 
 export function CheckoutForm({ currency = "USD" }: { currency?: string }) {
   const [fullName, setFullName] = useState("")
@@ -69,15 +68,35 @@ export function CheckoutForm({ currency = "USD" }: { currency?: string }) {
     )
   }
 
-  const submit = () => {
+  const submit = async () => {
     setBusy(true)
     try {
       const items = readCart().items
-      openWhatsAppOrder(items, currency, {
+      const payload = {
         fullName,
         whatsappNumber: phone,
         address,
+      }
+      
+      const response = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ items, payload, currency })
       })
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Erreur lors de la validation de la commande')
+      }
+      
+      const data = await response.json()
+      if (data.url) {
+        window.open(data.url, "_blank", "noopener,noreferrer")
+      }
+    } catch (e: any) {
+      alert("Erreur: " + e.message)
     } finally {
       setBusy(false)
     }
