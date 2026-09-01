@@ -42,4 +42,6 @@ body {
   .hover-lift { @apply transition-transform duration-300 hover:-translate-y-1; }
   .press { @apply active:translate-y-0 active:scale-[0.99]; }
   .soft-border { box-shadow: 0 0 0 1px rgba(255,255,255,0.06) inset; }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 }
