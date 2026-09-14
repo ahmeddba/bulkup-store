@@ -1,6 +1,6 @@
 import { supabaseServer } from "@/lib/supabase/server"
 import { getAllProducts, getBrands } from "@/lib/supabase/queries"
-import { shapeProductsWithRelations } from "@/lib/product-shape"
+import { shapeProductsWithPacks } from "@/lib/product-shape"
 import { ProductsClient } from "@/components/products/ProductsClient"
 
 export default async function ProductsPage() {
@@ -12,7 +12,7 @@ export default async function ProductsPage() {
     getBrands(supabase),
   ])
   
-  const products = shapeProductsWithRelations(rawProducts)
+  const products = await shapeProductsWithPacks(supabase, rawProducts)
 
   return (
     <div className="container py-8">

@@ -31,6 +31,34 @@ export type VariantJson = {
   price: number // Price in TND
 }
 
+// Row from product_sizes table
+export type ProductSizeRow = {
+  id: string
+  product_id: string
+  label: string
+  price: number
+  in_stock: boolean
+  sort_order: number
+}
+
+// Row from pack_items table (with nested relations)
+export type PackItemRow = {
+  id: string
+  pack_id: string
+  product_id: string
+  product_size_id: string | null
+  quantity: number
+  sort_order: number
+  products: {
+    id: string
+    name: string
+    slug: string
+    price: number
+    in_stock: boolean
+  }
+  product_sizes: ProductSizeRow | null
+}
+
 export type ProductRow = {
   id: string
   slug: string
@@ -39,10 +67,11 @@ export type ProductRow = {
   sku: string | null
   in_stock: boolean
   currency: string
+  product_type: 'standard' | 'pack'
   
   // RELATIONS (NOT flat text fields)
   category_id: string // UUID foreign key to categories.id
-  brand_id: string // UUID foreign key to brands.id
+  brand_id: string | null // UUID foreign key to brands.id (nullable for packs)
   
   // Pricing (based on actual DB schema)
   price: number // int8 - final selling price in millimes (divide by 1000 for TND)
@@ -66,6 +95,12 @@ export type ProductWithRelations = ProductRow & {
   categories: CategoryRow | null
   brands: BrandRow | null
 }
+
+// ============================================================================
+// SHARED SELECT for product queries (single source of truth)
+// ============================================================================
+
+const PRODUCT_SELECT = "*, categories(id, slug, name, sort_order), brands(id, slug, name, sort_order)"
 
 // ============================================================================
 // QUERY FUNCTIONS
@@ -104,7 +139,7 @@ export async function getBrands(supabase: SupabaseClient): Promise<BrandRow[]> {
 export async function getBestSellers(supabase: SupabaseClient): Promise<ProductWithRelations[]> {
   const { data, error } = await supabase
     .from("products")
-    .select("*, categories!inner(id, slug, name, sort_order), brands!inner(id, slug, name, sort_order)")
+    .select(PRODUCT_SELECT)
     .or("is_best_seller.eq.true,sales_count.gt.0")
     .order("sales_count", { ascending: false })
     .limit(8)
@@ -120,7 +155,7 @@ export async function getBestSellers(supabase: SupabaseClient): Promise<ProductW
 export async function getAllProducts(supabase: SupabaseClient): Promise<ProductWithRelations[]> {
   const { data, error } = await supabase
     .from("products")
-    .select("*, categories!inner(id, slug, name, sort_order), brands!inner(id, slug, name, sort_order)")
+    .select(PRODUCT_SELECT)
     .eq("in_stock", true)
     .order("sales_count", { ascending: false })
 
@@ -135,6 +170,8 @@ export async function getProductsByCategorySlug(
   supabase: SupabaseClient,
   slug: string
 ): Promise<{ category: CategoryRow | null; products: ProductWithRelations[] }> {
+  const isPacksCategory = slug === 'packs' || slug === 'bundles'
+  
   // Fetch category first
   const { data: category, error: cErr } = await supabase
     .from("categories")
@@ -144,17 +181,33 @@ export async function getProductsByCategorySlug(
 
   if (cErr && cErr.code !== 'PGRST116') throw cErr
 
-  // Fetch products with category and brand relations
-  const { data: products, error: pErr } = await supabase
+  let productsQuery = supabase
     .from("products")
-    .select("*, categories!inner(id, slug, name, sort_order), brands!inner(id, slug, name, sort_order)")
-    .eq("categories.slug", slug)
+    .select(PRODUCT_SELECT)
     .order("sales_count", { ascending: false })
+
+  if (isPacksCategory) {
+    // If it's the bundles/packs page, fetch all pack products regardless of their db category
+    productsQuery = productsQuery.eq("product_type", "pack")
+  } else {
+    // Normal category behavior
+    productsQuery = productsQuery.eq("category_id", category?.id ?? "")
+  }
+
+  const { data: products, error: pErr } = await productsQuery
  
   if (pErr) throw pErr
+  
+  // Create a synthetic category if it doesn't exist in DB but they requested packs
+  const resolvedCategory = category ?? (isPacksCategory ? {
+    id: "synth-packs",
+    slug: slug,
+    name: "Packs & Bundles",
+    sort_order: 99
+  } : null)
 
   return {
-    category: category ?? null,
+    category: resolvedCategory,
     products: (products ?? []) as ProductWithRelations[],
   }
 }
@@ -168,10 +221,65 @@ export async function getProductBySlug(
 ): Promise<ProductWithRelations | null> {
   const { data, error } = await supabase
     .from("products")
-    .select("*, categories!inner(id, slug, name, sort_order), brands!inner(id, slug, name, sort_order)")
+    .select(PRODUCT_SELECT)
     .eq("slug", slug)
     .single()
 
   if (error && error.code !== 'PGRST116') throw error
   return data as ProductWithRelations | null
+}
+
+/**
+ * Get pack items for a pack product (with included product and size details)
+ * Uses separate queries to avoid PostgREST composite FK disambiguation issues
+ */
+export async function getPackItems(
+  supabase: SupabaseClient,
+  packId: string
+): Promise<PackItemRow[]> {
+  // Step 1: Fetch pack_items rows
+  const { data: items, error: itemsErr } = await supabase
+    .from("pack_items")
+    .select("id, pack_id, product_id, product_size_id, quantity, sort_order")
+    .eq("pack_id", packId)
+    .order("sort_order", { ascending: true })
+
+  if (itemsErr) throw itemsErr
+  if (!items || items.length === 0) return []
+
+  // Step 2: Fetch the referenced products in bulk
+  const productIds = [...new Set(items.map(i => i.product_id))]
+  const { data: products, error: productsErr } = await supabase
+    .from("products")
+    .select("id, name, slug, price, in_stock")
+    .in("id", productIds)
+
+  if (productsErr) throw productsErr
+
+  // Step 3: Fetch referenced product_sizes in bulk (for items that have a size)
+  const sizeIds = items.map(i => i.product_size_id).filter((id): id is string => id != null)
+  let sizesMap: Record<string, ProductSizeRow> = {}
+  if (sizeIds.length > 0) {
+    const { data: sizes, error: sizesErr } = await supabase
+      .from("product_sizes")
+      .select("id, product_id, label, price, in_stock, sort_order")
+      .in("id", sizeIds)
+
+    if (sizesErr) throw sizesErr
+    sizesMap = Object.fromEntries((sizes ?? []).map(s => [s.id, s]))
+  }
+
+  // Step 4: Assemble into PackItemRow shape
+  const productsMap = Object.fromEntries((products ?? []).map(p => [p.id, p]))
+
+  return items.map(item => ({
+    id: item.id,
+    pack_id: item.pack_id,
+    product_id: item.product_id,
+    product_size_id: item.product_size_id,
+    quantity: item.quantity,
+    sort_order: item.sort_order,
+    products: productsMap[item.product_id] ?? { id: item.product_id, name: "Unknown", slug: "", price: 0, in_stock: false },
+    product_sizes: item.product_size_id ? (sizesMap[item.product_size_id] ?? null) : null,
+  }))
 }

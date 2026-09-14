@@ -1,6 +1,6 @@
 import { supabaseServer } from "@/lib/supabase/server"
 import { getProductsByCategorySlug } from "@/lib/supabase/queries"
-import { shapeProductsWithRelations } from "@/lib/product-shape"
+import { shapeProductsWithPacks } from "@/lib/product-shape"
 import { ProductGrid } from "@/components/home/ProductGrid"
 
 export default async function CategoryPage({
@@ -11,7 +11,7 @@ export default async function CategoryPage({
   const { slug } = await params
   const supabase = await supabaseServer()
   const { category, products: rawProducts } = await getProductsByCategorySlug(supabase, slug)
-  const products = shapeProductsWithRelations(rawProducts)
+  const products = await shapeProductsWithPacks(supabase, rawProducts)
 
   return (
     <div className="container py-8">

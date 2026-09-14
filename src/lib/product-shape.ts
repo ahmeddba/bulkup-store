@@ -1,9 +1,10 @@
 import type {
   ProductRow,
   ProductWithRelations,
-  ImageJson,
-  VariantJson,
+  PackItemRow,
 } from "./supabase/queries"
+import { getPackItems } from "./supabase/queries"
+import type { SupabaseClient } from "@supabase/supabase-js"
 
 // ============================================================================
 // SHAPED TYPES FOR UI
@@ -19,6 +20,16 @@ export type ShapedVariant = {
   price: number
 }
 
+export type ShapedPackItem = {
+  productId: string
+  productName: string
+  productSlug: string
+  sizeLabel: string | null
+  quantity: number
+  retailPrice: number // price of this component (size price or product price)
+  inStock: boolean
+}
+
 export type ShapedProduct = {
   id: string
   slug: string
@@ -27,6 +38,7 @@ export type ShapedProduct = {
   sku: string
   inStock: boolean
   currency: string
+  productType: 'standard' | 'pack'
   
   // Brand & Category
   brandName: string
@@ -42,6 +54,10 @@ export type ShapedProduct = {
   originalPrice: number // in TND
   discountPercent: number
   variants: ShapedVariant[]
+  
+  // Pack-specific
+  packItems: ShapedPackItem[]
+  retailTotal: number // sum of component retail prices (0 for standard products)
   
   // Additional
   flavors: string[]
@@ -69,9 +85,38 @@ export function buildImageUrl(path: string): string {
 }
 
 /**
+ * Shape pack items from raw DB rows into UI-ready format
+ */
+export function shapePackItems(rawItems: PackItemRow[]): ShapedPackItem[] {
+  return rawItems
+    .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+    .map((item) => {
+      const product = item.products
+      const size = item.product_sizes
+
+      // Use size price if size exists, otherwise product price
+      const retailPrice = size ? size.price : product.price
+      const inStock = size ? (product.in_stock && size.in_stock) : product.in_stock
+
+      return {
+        productId: product.id,
+        productName: product.name,
+        productSlug: product.slug,
+        sizeLabel: size?.label ?? null,
+        quantity: item.quantity,
+        retailPrice,
+        inStock,
+      }
+    })
+}
+
+/**
  * Convert product WITH brand and category relations to UI shape
  */
-export function shapeProductWithRelations(product: ProductWithRelations): ShapedProduct {
+export function shapeProductWithRelations(
+  product: ProductWithRelations,
+  rawPackItems?: PackItemRow[]
+): ShapedProduct {
   // Sort and map images
   const images: ShapedImage[] = (Array.isArray(product.images) ? product.images : [])
     .sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0))
@@ -87,6 +132,14 @@ export function shapeProductWithRelations(product: ProductWithRelations): Shaped
       alt: product.name,
     })
   }
+
+  const isPack = product.product_type === 'pack'
+
+  // Shape pack items
+  const packItems = (isPack && rawPackItems) ? shapePackItems(rawPackItems) : []
+  
+  // Calculate retailTotal for packs: sum of component retail prices * quantity
+  const retailTotal = packItems.reduce((sum, item) => sum + (item.retailPrice * item.quantity), 0)
 
   // Sort variants and extract with proper price validation
   // Variants in DB have format: {"sort":1,"label":"480ml","price_dt":180}
@@ -120,11 +173,23 @@ export function shapeProductWithRelations(product: ProductWithRelations): Shaped
   const defaultPrice = (variants.length > 0 && variants[0].price > 0) 
     ? variants[0].price 
     : priceTND
-  
-  // Fetch original price safely - default to defaultPrice if original not meaningful
-  const originalPriceTND = product.original_price > 0 ? product.original_price : defaultPrice;
-  const calculatedOriginalPrice = originalPriceTND > defaultPrice ? originalPriceTND : defaultPrice;
-  const discountPercent = product.discount_percent || 0;
+
+  // For packs, originalPrice is the retailTotal (component sum)
+  // For standard products, use the existing original_price logic
+  let calculatedOriginalPrice: number
+  let discountPercent: number
+
+  if (isPack && retailTotal > 0) {
+    calculatedOriginalPrice = retailTotal
+    // Calculate discount percent from retail total vs pack price
+    discountPercent = defaultPrice > 0 
+      ? Math.round(((retailTotal - defaultPrice) / retailTotal) * 100)
+      : 0
+  } else {
+    const originalPriceTND = product.original_price > 0 ? product.original_price : defaultPrice
+    calculatedOriginalPrice = originalPriceTND > defaultPrice ? originalPriceTND : defaultPrice
+    discountPercent = product.discount_percent || 0
+  }
 
   // Parse benefits from text[] array
   const benefits: string[] = Array.isArray(product.benefits)
@@ -149,8 +214,9 @@ export function shapeProductWithRelations(product: ProductWithRelations): Shaped
     sku: product.sku ?? "",
     inStock: product.in_stock,
     currency: product.currency ?? "TND",
+    productType: product.product_type ?? 'standard',
     
-    // Brand & Category from relations
+    // Brand & Category from relations (tolerant of null brand)
     brandName: product.brands?.name ?? "",
     brandSlug: product.brands?.slug ?? "",
     categoryName: product.categories?.name ?? "",
@@ -162,6 +228,10 @@ export function shapeProductWithRelations(product: ProductWithRelations): Shaped
     originalPrice: calculatedOriginalPrice,
     discountPercent,
     variants,
+    
+    // Pack data
+    packItems,
+    retailTotal,
     
     flavors,
     benefits,
@@ -175,7 +245,7 @@ export function shapeProductWithRelations(product: ProductWithRelations): Shaped
  * Shape multiple products with relations
  */
 export function shapeProductsWithRelations(products: ProductWithRelations[]): ShapedProduct[] {
-  return products.map(shapeProductWithRelations)
+  return products.map(p => shapeProductWithRelations(p))
 }
 
 // Legacy exports for backwards compatibility
@@ -190,4 +260,30 @@ export function shapeProducts(products: ProductRow[]): ShapedProduct[] {
   // Since ProductRow doesn't have relations, we can't extract brand/category
   // This function is kept for backwards compatibility but should not be used
   return products.map(p => shapeProductWithRelations(p as unknown as ProductWithRelations))
+}
+
+/**
+ * Shape multiple products, enriching pack products with their pack items.
+ * This is the preferred function for server pages that display product grids -
+ * it batch-fetches pack items for all pack products in one pass.
+ */
+export async function shapeProductsWithPacks(
+  supabase: SupabaseClient,
+  products: ProductWithRelations[]
+): Promise<ShapedProduct[]> {
+  // Identify which products are packs
+  const packProducts = products.filter(p => p.product_type === 'pack')
+  
+  // Batch fetch pack items for all packs
+  const packItemsMap: Record<string, PackItemRow[]> = {}
+  await Promise.all(
+    packProducts.map(async (pack) => {
+      packItemsMap[pack.id] = await getPackItems(supabase, pack.id)
+    })
+  )
+
+  // Shape all products, passing pack items where applicable
+  return products.map(p => 
+    shapeProductWithRelations(p, p.product_type === 'pack' ? packItemsMap[p.id] : undefined)
+  )
 }

@@ -19,4 +19,5 @@ export const CATEGORIES: Category[] = [
   { slug: "recovery", label: "Recovery" },
   { slug: "health-vitamins", label: "Health & Vitamins" },
   { slug: "accessories", label: "Accessories" },
+  { slug: "bundles", label: "Packs / Bundles" },
 ]

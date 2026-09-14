@@ -8,6 +8,7 @@ import { BenefitsCard } from "@/components/product/BenefitsCard"
 import { SizeSelector } from "@/components/product/SizeSelector"
 import { FlavorSelector } from "@/components/product/FlavorSelector"
 import { QuantityStepper, AddToCartButton } from "@/components/product/QuantityStepper"
+import type { ShapedPackItem } from "@/lib/product-shape"
 
 export default function ProductDetailClientImpl({
   product,
@@ -24,15 +25,20 @@ export default function ProductDetailClientImpl({
     inStock: boolean
     currency: string
     price: number // Final price (already discounted) in TND
-    originalPrice: number // Price before discount in TND
+    originalPrice: number // For packs: retailTotal. For standard: original_price
     discountPercent: number // Discount percentage
     isBestSeller: boolean
     flavors: string[]
+    productType: 'standard' | 'pack'
+    packItems: ShapedPackItem[]
+    retailTotal: number
   }
   images: { url: string; alt: string }[]
   variants: { id: string; label: string; price: number }[]
   benefits: string[]
 }) {
+  const isPack = product.productType === 'pack'
+
   const initialVariant = variants[0]?.id ?? ""
   const [variantId, setVariantId] = useState(initialVariant)
   const initialFlavor = product.flavors?.[0] ?? ""
@@ -41,13 +47,20 @@ export default function ProductDetailClientImpl({
 
   const selected = useMemo(() => variants.find((v) => v.id === variantId) ?? variants[0], [variantId, variants])
   
-  // Use selected variant price (variants come from DB with actual prices)
-  const displayPrice = selected?.price ?? product.price
+  // For packs, use pack price directly (no variant selection)
+  // For standard products, use selected variant price
+  const displayPrice = isPack ? product.price : (selected?.price ?? product.price)
   const displayPriceCents = Math.round(displayPrice * 100)
   
-  // Use actual originalPrice from product schema instead of deceptive fake calculation
-  const displayOriginalPrice = product.originalPrice > displayPrice ? product.originalPrice : displayPrice
-  const hasDiscount = displayPrice > 0 && product.discountPercent > 0 && displayOriginalPrice > displayPrice
+  // For packs: crossed-out price = retailTotal
+  // For standard: use actual originalPrice from product schema
+  const displayOriginalPrice = isPack 
+    ? product.retailTotal 
+    : (product.originalPrice > displayPrice ? product.originalPrice : displayPrice)
+  
+  const hasDiscount = isPack
+    ? product.retailTotal > displayPrice
+    : (displayPrice > 0 && product.discountPercent > 0 && displayOriginalPrice > displayPrice)
 
   return (
     <div className="mt-4 grid grid-cols-1 gap-10 lg:grid-cols-12">
@@ -67,10 +80,15 @@ export default function ProductDetailClientImpl({
               <Badge className="bg-red-500/20 text-red-300 font-extrabold">Rupture de Stock</Badge>
             )}
             
+            {/* Pack Badge */}
+            {isPack ? (
+              <Badge className="bg-purple-600/20 text-purple-400 font-extrabold">Pack</Badge>
+            ) : null}
+
             {/* Discount Badge */}
             {hasDiscount ? (
               <Badge className="bg-green-600 text-white font-extrabold">
-                -10%
+                -{isPack ? product.discountPercent : 10}%
               </Badge>
             ) : null}
           </div>
@@ -93,25 +111,50 @@ export default function ProductDetailClientImpl({
 
         <p className="leading-relaxed text-white/55">{product.description}</p>
 
+        {/* Pack Contents Section */}
+        {isPack && product.packItems.length > 0 ? (
+          <div className="rounded-xl border border-white/10 bg-[#1a1a1a] p-5">
+            <h3 className="mb-4 text-sm font-extrabold uppercase tracking-widest text-primary">
+              Contenu du Pack
+            </h3>
+            <ul className="space-y-3">
+              {product.packItems.map((item, idx) => (
+                <li key={idx} className="flex items-center gap-3">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-green-500/20 text-green-400 text-xs">✓</span>
+                  <span className="text-sm font-semibold text-white">
+                    {item.quantity > 1 ? `${item.quantity} × ` : ""}
+                    {item.productName}
+                    {item.sizeLabel ? ` — ${item.sizeLabel}` : ""}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+
         <BenefitsCard benefits={benefits} />
 
-
         <div className="space-y-4">
-          <FlavorSelector 
-            value={flavor} 
-            options={product.flavors ?? []} 
-            onChange={setFlavor} 
-          />
+          {/* Hide flavor and size selectors for packs */}
+          {!isPack ? (
+            <>
+              <FlavorSelector 
+                value={flavor} 
+                options={product.flavors ?? []} 
+                onChange={setFlavor} 
+              />
 
-          <SizeSelector 
-            value={variantId} 
-            options={variants.map(v => ({
-              id: v.id,
-              label: v.label,
-              unitPriceCents: Math.round(v.price * 100)
-            }))} 
-            onChange={setVariantId} 
-          />
+              <SizeSelector 
+                value={variantId} 
+                options={variants.map(v => ({
+                  id: v.id,
+                  label: v.label,
+                  unitPriceCents: Math.round(v.price * 100)
+                }))} 
+                onChange={setVariantId} 
+              />
+            </>
+          ) : null}
 
           <div className="mt-2 flex flex-col gap-4 sm:flex-row">
             <QuantityStepper value={qty} onChange={setQty} className="sm:w-32" />
@@ -125,13 +168,13 @@ export default function ProductDetailClientImpl({
                 currency: product.currency 
               }}
               variant={{ 
-                id: selected?.id ?? "", 
-                label: selected?.label ?? "", 
-                unitPriceCents: Math.round((selected?.price ?? product.price) * 100)
+                id: isPack ? `pack-${product.id}` : (selected?.id ?? ""), 
+                label: isPack ? "Pack" : (selected?.label ?? ""), 
+                unitPriceCents: displayPriceCents
               }}
               imageUrl={images[0]?.url}
               qty={qty}
-              flavor={flavor}
+              flavor={isPack ? "" : flavor}
               className="h-14 flex-1 rounded-lg bg-primary text-lg font-black text-black shadow-glow-yellow hover:bg-[#d9ba0b] hover:shadow-[0_0_20px_rgba(242,208,13,0.35)] press"
             />
           </div>

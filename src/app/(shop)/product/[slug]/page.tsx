@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { supabaseServer } from "@/lib/supabase/server"
-import { getProductBySlug } from "@/lib/supabase/queries"
+import { getProductBySlug, getPackItems } from "@/lib/supabase/queries"
 import { shapeProductWithRelations } from "@/lib/product-shape"
 import ProductDetailClientImpl from "./ProductDetailClientImpl"
 
@@ -25,7 +25,12 @@ export default async function ProductPage({
     )
   }
 
-  const product = shapeProductWithRelations(rawProduct)
+  const isPack = rawProduct.product_type === 'pack'
+
+  // Fetch pack items if this is a pack product
+  const rawPackItems = isPack ? await getPackItems(supabase, rawProduct.id) : undefined
+
+  const product = shapeProductWithRelations(rawProduct, rawPackItems)
 
   // Map shaped data to client component props
   const images = product.images.map((img) => ({
@@ -33,7 +38,8 @@ export default async function ProductPage({
     alt: img.alt,
   }))
 
-  const variants = product.variants.map((v, idx) => ({
+  // For packs, don't pass variants (no size selection)
+  const variants = isPack ? [] : product.variants.map((v, idx) => ({
     id: `variant-${idx}`,
     label: v.size,
     price: v.price, // Use actual price, not cents
@@ -63,10 +69,13 @@ export default async function ProductPage({
           inStock: product.inStock,
           currency: product.currency,
           price: product.defaultPrice, // Final price (already discounted)
-          originalPrice: product.originalPrice, // Price before discount
+          originalPrice: product.originalPrice, // For packs: retailTotal. For standard: original_price
           discountPercent: product.discountPercent, // Discount percentage
           isBestSeller: product.isBestSeller,
           flavors: product.flavors,
+          productType: product.productType,
+          packItems: product.packItems,
+          retailTotal: product.retailTotal,
         }}
         images={images}
         variants={variants}
