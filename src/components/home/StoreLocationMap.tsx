@@ -4,9 +4,7 @@
 
 export function StoreLocationMap() {
   const googleMapsUrl = "https://www.google.com/maps/place/Bulkup+store/@36.9001769,10.1860537,17z/data=!3m1!4b1!4m6!3m5!1s0x12e2cbdb800e0c75:0x61de9973afff2970!8m2!3d36.9001769!4d10.1860537!16s%2Fg%2F11xyp8__x8?entry=ttu&g_ep=EgoyMDI2MDIwNC4wIKXMDSoASAFQAw%3D%3D"
-  
-  // Static Google Maps image URL with marker
-  const staticMapUrl = `https://maps.googleapis.com/maps/api/staticmap?center=36.9001769,10.1860537&zoom=15&size=600x400&markers=color:yellow%7C36.9001769,10.1860537&style=feature:all%7Celement:geometry%7Ccolor:0x242f3e&style=feature:all%7Celement:labels.text.stroke%7Ccolor:0x242f3e&style=feature:all%7Celement:labels.text.fill%7Ccolor:0x746855&style=feature:water%7Celement:geometry%7Ccolor:0x17263c&key=YOUR_API_KEY`
+
 
   return (
     <a 
@@ -41,7 +39,7 @@ export function StoreLocationMap() {
       {/* Store address overlay */}
       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
         <p className="text-sm font-extrabold text-white">Bulkup Store</p>
-        <p className="text-xs font-semibold text-white/55">Cliquez pour obtenir l'itinéraire</p>
+        <p className="text-xs font-semibold text-white/55">Cliquez pour obtenir l&apos;itinéraire</p>
       </div>
     </a>
   )

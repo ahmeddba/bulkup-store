@@ -1,6 +1,5 @@
 import Link from "next/link"
 import { NavigationMenu, NavigationMenuItem, NavigationMenuLink, NavigationMenuList } from "@/components/ui/navigation-menu"
-import { Button } from "@/components/ui/button"
 import { CartButton } from "./CartButton"
 import { MobileNavSheet } from "./MobileNavSheet"
 import { cn } from "@/lib/utils"

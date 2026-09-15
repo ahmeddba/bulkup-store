@@ -144,9 +144,9 @@ export function shapeProductWithRelations(
   // Sort variants and extract with proper price validation
   // Variants in DB have format: {"sort":1,"label":"480ml","price_dt":180}
   let variants: ShapedVariant[] = (Array.isArray(product.variants) ? product.variants : [])
-    .map((v: any) => {
+    .map((v: Record<string, unknown>) => {
       // Read price_dt from variant (not "price")
-      const priceDt = v.price_dt || v.price || 0
+      const priceDt = (v.price_dt as number) || (v.price as number) || 0
       const parsedPrice = Number(priceDt)
       let price = isNaN(parsedPrice) ? 0 : parsedPrice
       
@@ -156,7 +156,7 @@ export function shapeProductWithRelations(
       }
       
       return {
-        size: v.label || v.size || "",
+        size: (v.label as string) || (v.size as string) || "",
         price,
       }
     })
@@ -201,8 +201,8 @@ export function shapeProductWithRelations(
   if (product.flavors) {
     if (Array.isArray(product.flavors)) {
       flavors = product.flavors
-    } else if (typeof product.flavors === 'object' && Array.isArray((product.flavors as any).flavors)) {
-      flavors = (product.flavors as any).flavors
+    } else if (typeof product.flavors === 'object' && Array.isArray((product.flavors as Record<string, unknown>).flavors)) {
+      flavors = (product.flavors as Record<string, unknown>).flavors as string[]
     }
   }
 

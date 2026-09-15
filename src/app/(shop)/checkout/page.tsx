@@ -7,7 +7,7 @@ export default function CheckoutPage() {
       <div className="mb-6">
         <h1 className="text-3xl font-black tracking-tight text-white lg:text-4xl">Finaliser la Commande</h1>
         <p className="mt-2 text-sm font-semibold text-white/55 lg:text-base">
-          Vérifiez votre panier et dites-nous où l'envoyer.
+          Vérifiez votre panier et dites-nous où l&apos;envoyer.
         </p>
       </div>
 

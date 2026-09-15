@@ -19,7 +19,7 @@ export default async function ProductPage({
       <div className="container py-16">
         <h1 className="text-2xl font-black text-white">Produit introuvable</h1>
         <Link href="/" className="mt-4 inline-block text-primary font-extrabold">
-          Retour à l'accueil →
+          Retour à l&apos;accueil →
         </Link>
       </div>
     )

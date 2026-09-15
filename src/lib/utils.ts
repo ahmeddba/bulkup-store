@@ -40,7 +40,7 @@ export function formatTND(value: number | string | null | undefined): string {
  * Converts cents to TND and formats
  * @deprecated Use formatTND with TND values directly
  */
-export function formatMoney(cents: number, currency = "TND") {
+export function formatMoney(cents: number, _currency = "TND") {
   const value = cents / 100
   return formatTND(value)
 }

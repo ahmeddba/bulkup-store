@@ -48,10 +48,10 @@ export function AddToCartConfirmDialog({
         <AlertDialogHeader>
           <AlertDialogTitle className="flex items-center gap-2 text-xl font-black text-white">
             <ShoppingCart className="h-5 w-5 text-primary" />
-            Confirmer l'ajout au panier
+            Confirmer l&apos;ajout au panier
           </AlertDialogTitle>
           <AlertDialogDescription className="text-white/55">
-            Vérifiez les détails avant d'ajouter ce produit à votre panier
+            Vérifiez les détails avant d&apos;ajouter ce produit à votre panier
           </AlertDialogDescription>
         </AlertDialogHeader>
 
@@ -129,7 +129,7 @@ export function AddToCartConfirmDialog({
             onClick={onConfirm}
             className="bg-primary text-black hover:bg-[#ffe033] font-black shadow-glow-yellow"
           >
-            Confirmer l'ajout
+            Confirmer l&apos;ajout
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

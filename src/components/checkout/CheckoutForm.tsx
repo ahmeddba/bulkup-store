@@ -95,8 +95,9 @@ export function CheckoutForm({ currency = "USD" }: { currency?: string }) {
       if (data.url) {
         window.open(data.url, "_blank", "noopener,noreferrer")
       }
-    } catch (e: any) {
-      alert("Erreur: " + e.message)
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Erreur inconnue"
+      alert("Erreur: " + msg)
     } finally {
       setBusy(false)
     }
@@ -179,7 +180,7 @@ export function CheckoutForm({ currency = "USD" }: { currency?: string }) {
             </div>
           )}
           {!address.includes('google.com/maps') && !gpsError && (
-            <div className="ml-1 text-xs italic text-white/45">* Nous confirmerons l'emplacement exact par chat.</div>
+            <div className="ml-1 text-xs italic text-white/45">* Nous confirmerons l&apos;emplacement exact par chat.</div>
           )}
         </div>
 

@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation"
 import { cartCount, cartSubtotalCents, readCart } from "@/lib/cart"
 import { formatTND } from "@/lib/utils"
 
-export function StickyCartBar({ currency = "TND" }: { currency?: string }) {
+export function StickyCartBar({ currency: _currency = "TND" }: { currency?: string }) {
   const [count, setCount] = useState(0)
   const [subtotal, setSubtotal] = useState(0)
   const pathname = usePathname()

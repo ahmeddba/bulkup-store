@@ -80,7 +80,7 @@ export type ProductRow = {
   
   dosage: string | null
   benefits: string[] | null // text[] array in DB
-  flavors: any | null // jsonb in DB
+  flavors: unknown | null // jsonb in DB
   
   is_best_seller: boolean
   is_promotion: boolean
